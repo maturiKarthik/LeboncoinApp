@@ -28,6 +28,7 @@ This App is about Fun
                              Log.w("Body", "${dataRecv[index].id} -- ${dataRecv[index].albumId}")
                          }
 
+
                      }
                  })
          }

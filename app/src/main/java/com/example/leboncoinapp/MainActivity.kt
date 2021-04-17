@@ -2,38 +2,46 @@ package com.example.leboncoinapp
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.ProgressBar
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import com.example.leboncoinapp.network.ApiRetrofitBuilder
+import com.example.leboncoinapp.UI.CustomToast
 import com.example.leboncoinapp.network.LebonCoinData
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Response
+import com.example.leboncoinapp.network.NetworkFacade
+import com.example.leboncoinapp.network.NetworkListener
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), NetworkListener {
+
+    private lateinit var progressBar: ProgressBar
+    private lateinit var stringMessage: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        initView()
+        NetworkFacade.connect(this, context = applicationContext)
+    }
 
-        GlobalScope.launch {
-            val lebonCoinApiInterface = ApiRetrofitBuilder.build()
-            lebonCoinApiInterface.getAllProducts()
-                .enqueue(object : retrofit2.Callback<List<LebonCoinData>> {
-                    override fun onFailure(call: Call<List<LebonCoinData>>, t: Throwable) {
-                        Log.e("Error", "Error To fetch Data")
-                    }
+    private fun initView() {
+        progressBar = findViewById(R.id.progress_circular)
+        stringMessage = findViewById(R.id.text_message)
+    }
 
-                    override fun onResponse(
-                        call: Call<List<LebonCoinData>>,
-                        response: Response<List<LebonCoinData>>
-                    ) {
-                        val dataRecv = response.body()
-                        for (index in 0 until dataRecv!!.size) {
-                            Log.w("Body", "${dataRecv[index].id} -- ${dataRecv[index].albumId}")
-                        }
 
-                    }
-                })
+    // NetworkListener Methods
+    override fun onConnectionFail(message: String) {
+        stringMessage.text = message
+        CustomToast.display(this, message)
+        progressBar.visibility = View.GONE
+    }
+
+    override fun onResponseBodyReceive(responseBody: List<LebonCoinData>?) {
+        stringMessage.visibility = View.GONE
+        CustomToast.display(this, "Sucess")
+        progressBar.visibility = View.GONE
+        for (index in responseBody!!.indices) {
+            Log.w("NETWORK", "${responseBody[index].id} -- ${responseBody[index].albumId} -- ${responseBody[index].title}")
         }
     }
 }
